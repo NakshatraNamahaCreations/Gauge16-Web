@@ -3,7 +3,7 @@ import DataTable from "react-data-table-component";
 import Button from "react-bootstrap/esm/Button";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import NavDropdown from "react-bootstrap/NavDropdown";
-import { InputAdornment, TextField } from "@mui/material";
+import { Autocomplete, TextField } from "@mui/material";
 import Form from "react-bootstrap/Form";
 
 import { Table } from "react-bootstrap";
@@ -30,6 +30,7 @@ function Quotations() {
   const [allAccounts, setAllAccounts] = useState([]);
   const [customerAddress, setCustomerAddress] = useState({});
   const [searchquotation, setsearchquotation] = useState("");
+  const [hoveredItem, setHoveredItem] = useState(null);
 
   console.log("QuotationNumber", QuotationNumber);
 
@@ -63,6 +64,8 @@ function Quotations() {
       sort: true,
     },
     {
+      name: "Rate",
+      sort: true,
       selector: (row) => {
         const totalDiscountAmountForRow = row.itemDetails
           ? row.itemDetails.reduce((itemTotal, item) => {
@@ -76,8 +79,6 @@ function Quotations() {
 
         return roundedTotalDiscountAmountForRow;
       },
-      name: "Rate",
-      sort: true,
     },
     {
       name: "Action",
@@ -266,76 +267,29 @@ function Quotations() {
     }
   };
 
-  // new
-
-  const [unitFrom, setunitFrom] = useState("kg");
-  const [unitTo, setunitTo] = useState("kg");
-
-  const handleDropdownToggle3 = (event) => {
-    setunitTo(event.target.value);
-  };
-
-  const handleDropdownToggle2 = (event) => {
-    setunitFrom(event.target.value);
-  };
-
-  const [expanded, setExpanded] = useState(false);
-  const [expandedIndex, setExpandedIndex] = useState(null);
-  const handleChangeAccordian = (index) => {
-    setExpanded(!expanded);
-    setExpandedIndex(index);
-  };
-  const [lengths, setlengths] = useState("");
-  const [widths, setwidths] = useState("");
-  const [heights, setheights] = useState("");
-
-  const conversionFactorKgToPieces = 5;
-  const conversionFactorPiecesToDz = 12;
-  const conversionFactorDzToPieces = 1 / conversionFactorPiecesToDz;
-  const conversionFactorDzToKg = 0.5;
-
-  const [CalculatedUnit, setCalculatedUnit] = useState(null);
-  const [opendelete, setopendelete] = useState(false);
-  const [ProductQuantity, setProductQuantity] = useState("");
-  const handleConvert = () => {
-    let result;
-
-    if (unitFrom === "Kg" && unitTo === "Kg") {
-      result = ProductQuantity;
-    } else if (unitFrom === "Pieces" && unitTo === "Pieces") {
-      result = ProductQuantity;
-    } else if (unitFrom === "Dozen" && unitTo === "Dozen") {
-      result = ProductQuantity;
-    } else if (unitFrom === "Kg" && unitTo === "Pieces") {
-      result = ProductQuantity * conversionFactorKgToPieces;
-    } else if (unitFrom === "Pieces" && unitTo === "Dozen") {
-      result = ProductQuantity / conversionFactorPiecesToDz;
-    } else if (unitFrom === "Dozen" && unitTo === "Pieces") {
-      result = ProductQuantity * conversionFactorDzToPieces;
-    } else if (unitFrom === "Pieces" && unitTo === "Kg") {
-      result = ProductQuantity / conversionFactorKgToPieces;
-    } else if (unitFrom === "Dozen" && unitTo === "Kg") {
-      result = ProductQuantity * conversionFactorDzToKg;
-    }
-
-    setCalculatedUnit(result);
-  };
-
   const [itemDetails, setitemDetails] = useState([
     {
       itemId: "",
       itemName: "",
-      quantity: "1",
-      rate: "0.00",
-      discount: "0",
+      quantity: 0,
+      rate: 0.0,
+      discount: 0,
       discountAmount: 0,
-      tax: "0",
+      markup: 0,
     },
   ]);
 
-  const handleChangeAccordian1 = (index) => {
-    setExpandedIndex(expandedIndex === index ? null : index);
-    setExpanded(!expanded);
+  const addTableRow = () => {
+    const newRow = {
+      itemId: "",
+      itemName: "",
+      quantity: 0,
+      rate: 0.0,
+      discount: 0,
+      discountAmount: 0,
+      markup: 0,
+    };
+    setitemDetails((prevTableSet) => [...prevTableSet, newRow]);
   };
 
   useEffect(() => {
@@ -354,158 +308,6 @@ function Quotations() {
     } catch (error) {
       console.warn(error);
     }
-  };
-
-  const handleSelectChange = (e, index) => {
-    const selectedValue = e.target.value;
-    const selectedItem = allItems.find((item) => item._id === selectedValue);
-    // console.log("selectedItem", selectedItem);
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        itemId: selectedItem?._id || "",
-        itemName: selectedItem?.itemName || "",
-        quantity:
-          selectedItem?.unitRequired !== undefined &&
-          selectedItem?.unitRequired !== null
-            ? String(selectedItem.unitRequired)
-            : "1",
-        rate:
-          selectedItem?.sellingPrice !== undefined &&
-          selectedItem?.sellingPrice !== null
-            ? String(selectedItem.sellingPrice)
-            : "0.00",
-        discount:
-          selectedItem?.discount !== undefined &&
-          selectedItem?.discount !== null
-            ? String(selectedItem.discount)
-            : "0",
-        tax:
-          selectedItem?.tax !== undefined && selectedItem?.tax !== null
-            ? String(selectedItem.tax)
-            : "0",
-      };
-
-      return newTableSet;
-    });
-  };
-
-  const addTableRow = () => {
-    const newRow = {
-      itemId: "",
-      itemName: "",
-      quantity: "1",
-      rate: "0.00",
-      discount: "0",
-      tax: "0",
-      // discountAmount: calculateDiscountAmount("0.00", "1", "0"),
-    };
-    setitemDetails((prevTableSet) => [...prevTableSet, newRow]);
-  };
-
-  const handleQuantityChange = (e, index) => {
-    const newQuantity = e.target.value;
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        quantity: newQuantity,
-        discountAmount: calculateDiscountAmount(
-          newTableSet[index].rate,
-          newQuantity,
-          newTableSet[index].discount
-        ),
-      };
-      return newTableSet;
-    });
-  };
-
-  const handleRateChange = (e, index) => {
-    const newRate = e.target.value;
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        rate: newRate,
-        discountAmount: calculateDiscountAmount(
-          newRate,
-          newTableSet[index].quantity,
-          newTableSet[index].discount
-        ),
-      };
-      return newTableSet;
-    });
-  };
-
-  const handleDiscountChange = (e, index) => {
-    const newDiscount = e.target.value;
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        discount: newDiscount,
-        discountAmount: calculateDiscountAmount(
-          newTableSet[index].rate,
-          newTableSet[index].quantity,
-          newDiscount,
-          newTableSet[index].tax // Pass tax value as well
-        ),
-      };
-      return newTableSet;
-    });
-  };
-
-  const handleGstChange = (e, index) => {
-    const newGst = e.target.value;
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        gst: newGst,
-        discountAmount: calculateDiscountAmount(
-          newTableSet[index].rate,
-          newTableSet[index].quantity,
-          newTableSet[index].discount,
-          newGst
-        ),
-      };
-      return newTableSet;
-    });
-  };
-
-  const calculateDiscountAmount = (rate, quantity, discount, tax) => {
-    const stringToQuantity = parseFloat(quantity);
-    const stringToRate = parseFloat(rate);
-    const stringToDiscount = parseFloat(discount);
-    const stringToTax = parseFloat(tax);
-    if (
-      isNaN(stringToQuantity) ||
-      isNaN(stringToRate) ||
-      isNaN(stringToDiscount) ||
-      isNaN(stringToTax)
-    ) {
-      return "0.00";
-    }
-    const totalBeforeDiscount = stringToRate * stringToQuantity;
-
-    const discountAmount = (stringToDiscount / 100) * totalBeforeDiscount;
-
-    const discountedAmount = totalBeforeDiscount - discountAmount;
-
-    if (isNaN(discountedAmount)) {
-      return "0.00";
-    }
-
-    const gstAmount = (stringToTax / 100) * discountedAmount;
-
-    if (isNaN(gstAmount)) {
-      return "0.00";
-    }
-
-    const finalAmount = discountedAmount + gstAmount;
-
-    return finalAmount.toFixed(2);
   };
 
   const handleDeleteRow = (index) => {
@@ -533,6 +335,113 @@ function Quotations() {
     } catch (error) {
       console.warn(error);
     }
+  };
+
+  console.log("itemDetails", itemDetails);
+
+  const handleSelectChange = (event, newValue, index) => {
+    // Use newValue to get the selected item
+    const selectedItem = newValue;
+
+    console.log(
+      "selectedItem in the handleSelectChange function",
+      selectedItem
+    );
+
+    setitemDetails((prevTableSet) => {
+      const newTableSet = [...prevTableSet];
+      const updatedStockInHand = selectedItem?.stockInHand || 0;
+      newTableSet[index] = {
+        ...newTableSet[index],
+        itemId: selectedItem?._id || "",
+        itemName: selectedItem?.itemName || "",
+        quantity: Number(0),
+        rate:
+          selectedItem?.sellingPrice !== undefined &&
+          selectedItem?.sellingPrice !== null
+            ? Number(selectedItem.sellingPrice)
+            : 0.0,
+        discount: Number(0),
+        // oldstockinhand: updatedStockInHand,
+      };
+
+      return newTableSet;
+    });
+  };
+
+  const handleQuantityChange = (e, index) => {
+    const newQuantity = Number(e.target.value);
+    console.log("newQuantity", newQuantity);
+    const selectedItem = itemDetails[index];
+    console.log("selectedItem", selectedItem);
+    console.log("newQuantity", newQuantity);
+
+    setitemDetails((prevTableSet) => {
+      const newTableSet = [...prevTableSet];
+      // const findOldStockInHand = parseInt(itemDetails[index].oldstockinhand);
+      // const remainingStock = findOldStockInHand - newQuantity;
+      newTableSet[index] = {
+        ...newTableSet[index],
+        quantity: newQuantity,
+        // stockInHand: findOldStockInHand - parseInt(newQuantity),
+        discountAmount: calculateFinalAmount(
+          newTableSet[index].rate,
+          newQuantity,
+          newTableSet[index].discount,
+          newTableSet[index].markup
+        ),
+      };
+      console.log("Updated Table Set:", newTableSet);
+      return newTableSet;
+    });
+  };
+  const handleDiscountChange = (e, index) => {
+    const newDiscount = Number(e.target.value);
+    console.log("newDiscount", typeof newDiscount);
+    setitemDetails((prevTableSet) => {
+      const newTableSet = [...prevTableSet];
+      newTableSet[index] = {
+        ...newTableSet[index],
+        discount: newDiscount,
+        discountAmount: calculateFinalAmount(
+          newTableSet[index].rate,
+          newTableSet[index].quantity,
+          newDiscount,
+          newTableSet[index].markup
+          // newTableSet[index].tax // Pass tax value as well
+        ),
+      };
+      return newTableSet;
+    });
+  };
+  const handleMarkupChange = (e, index) => {
+    const newMarkUp = e.target.value;
+    setitemDetails((prevTableSet) => {
+      const newTableSet = [...prevTableSet];
+      newTableSet[index] = {
+        ...newTableSet[index],
+        markup: newMarkUp,
+        discountAmount: calculateFinalAmount(
+          newTableSet[index].rate,
+          newTableSet[index].quantity,
+          newTableSet[index].discount,
+          newMarkUp
+        ),
+      };
+      return newTableSet;
+    });
+  };
+  const calculateFinalAmount = (rate, quantity, discount, markup) => {
+    const stringToQuantity = parseFloat(quantity);
+    const stringToRate = parseFloat(rate);
+
+    const baseAmount = stringToRate * stringToQuantity;
+
+    const discountedAmount = baseAmount * (1 - Number(discount) / 100);
+
+    const finalAmount = discountedAmount * (1 + Number(markup) / 100);
+
+    return Number(Math.round(finalAmount.toFixed(2)));
   };
 
   return (
@@ -626,6 +535,7 @@ function Quotations() {
           </div>
         </>
       )}
+      {/*==============================Add New New Quotation======================================= */}
       {item && !ModifyITems && (
         <div className="container p-5">
           <p className="textbld f_20">New Quotation </p>
@@ -676,15 +586,16 @@ function Quotations() {
                 <div className="col-md-4">
                   <p className="colr-red textbld">Quotation Date*</p>
                 </div>
-
-                <TextField
-                  className=" m-auto mb-4"
-                  sx={{ width: "48ch" }}
-                  size="small"
-                  type="date"
-                  onChange={(e) => setQuotationDate(e.target.value)}
-                  value={QuotationDate}
-                />
+                <div className="col-md-8">
+                  <Form.Control
+                    className=" m-auto mb-4"
+                    sx={{ width: "100px" }}
+                    // size="small"
+                    type="date"
+                    onChange={(e) => setQuotationDate(e.target.value)}
+                    value={QuotationDate}
+                  />{" "}
+                </div>
               </div>
               <div className="row ">
                 <div className="col-md-4">
@@ -779,9 +690,9 @@ function Quotations() {
               </button>
             </div>
             <div className="col-md-8 m-auto "></div>
-            <div className="col-md-2 text-end textbld bulkupload">
+            {/* <div className="col-md-2 text-end textbld bulkupload">
               Bulk Update
-            </div>
+            </div> */}
           </div>
           <Table className="col-md-12">
             <thead>
@@ -789,9 +700,9 @@ function Quotations() {
               <th className="td_S th_C p-2">Quantity</th>
               <th className="td_S th_C p-2">Rate</th>
               <th className="td_S th_C p-2">Discount</th>
-              <th className="td_S th_C p-2">Gst</th>
+              <th className="td_S th_C p-2">Markup</th>
               <th className="td_S th_C p-2">Amount</th>
-              <th className="td_S th_C p-2">Action</th>
+              <th className="td_S th_C p-2"></th>
             </thead>
             <tbody>
               {itemDetails.map((ele, index) => {
@@ -799,8 +710,53 @@ function Quotations() {
                 return (
                   <tr>
                     {/* {console.log("ele", ele)} */}
-                    <td className="td_S m-auto th_C p-4">
-                      <select
+                    <td className="td_S m-auto th_C p-3">
+                      <Autocomplete
+                        id="Item Details"
+                        options={allItems}
+                        getOptionLabel={(option) =>
+                          `${option.itemName} / SKU: ${option.skuCode} / Rate: Rs. ${option.sellingPrice}`
+                        }
+                        style={{ width: 300 }}
+                        onChange={(event, newValue) =>
+                          handleSelectChange(event, newValue, index)
+                        }
+                        // onChange={(event, newValue) =>
+                        //   handleSelectChange(event, newValue, index)
+                        // }
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Item Details"
+                            variant="outlined"
+                          />
+                        )}
+                        renderOption={(props, option) => {
+                          const { onMouseMove, onMouseOver, ...other } = props;
+                          const isHovered =
+                            hoveredItem && hoveredItem._id === option._id;
+                          return (
+                            <li
+                              {...other}
+                              onMouseOver={(event) => {
+                                setHoveredItem(option);
+                                onMouseOver && onMouseOver(event);
+                              }}
+                              onMouseMove={onMouseMove}
+                            >
+                              <div>
+                                {`${option.itemName} / SKU: ${option.skuCode} / Rate: Rs. ${option.sellingPrice}`}
+                              </div>
+                              {isHovered && option.description && (
+                                <div style={{ fontSize: 12, color: "gray" }}>
+                                  {`Description: ${option.description}`}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        }}
+                      />
+                      {/* <select
                         style={{
                           border: "1px solid #dee2e6",
                           padding: "11px",
@@ -818,9 +774,9 @@ function Quotations() {
                             </option>
                           );
                         })}
-                      </select>
+                      </select> */}
                     </td>{" "}
-                    <td className="td_S m-auto th_C p-4">
+                    <td className="td_S m-auto th_C p-3">
                       <Form.Control
                         placeholder="Quantity"
                         type="number"
@@ -830,30 +786,33 @@ function Quotations() {
                           padding: "11px",
                           outline: 0,
                           borderRadius: "8px",
+                          width: "75%",
                         }}
                         value={ele.quantity}
                         onChange={(e) => handleQuantityChange(e, index)}
                       />
                     </td>
-                    <td className="td_S m-auto th_C p-4">
+                    <td className="td_S m-auto th_C p-3">
                       <Form.Control
                         placeholder="Rate"
                         type="number"
-                        min={0}
+                        readOnly
                         style={{
                           border: "1px solid #dee2e6",
                           padding: "11px",
                           outline: 0,
                           borderRadius: "8px",
+                          width: "100px",
                         }}
                         value={ele.rate}
-                        onChange={(e) => handleRateChange(e, index)}
+                        // onChange={(e) => handleRateChange(e, index)}
                       />
                     </td>
-                    <td className="td_S m-auto th_C p-4">
+                    <td className="td_S m-auto th_C p-3">
                       <Form.Control
                         placeholder="discount"
                         type="number"
+                        min={0}
                         style={{
                           border: "1px solid #dee2e6",
                           padding: "11px",
@@ -864,7 +823,7 @@ function Quotations() {
                         onChange={(e) => handleDiscountChange(e, index)}
                       />
                     </td>
-                    <td className="td_S m-auto th_C p-4">
+                    {/* <td className="td_S m-auto th_C p-4">
                       <Form.Control
                         placeholder="Gst"
                         type="number"
@@ -877,8 +836,23 @@ function Quotations() {
                         value={ele.tax}
                         onChange={(e) => handleGstChange(e, index)}
                       />
+                    </td> */}
+                    <td className="td_S m-auto th_C p-3">
+                      <Form.Control
+                        placeholder="Markup"
+                        type="number"
+                        style={{
+                          border: "1px solid #dee2e6",
+                          padding: "11px",
+                          outline: 0,
+                          borderRadius: "8px",
+                        }}
+                        value={ele.markup}
+                        min={0}
+                        onChange={(e) => handleMarkupChange(e, index)}
+                      />
                     </td>
-                    <td className="td_S m-auto th_C p-4">
+                    <td className="td_S m-auto th_C p-3">
                       <div
                         className="mb-1"
                         style={{
@@ -888,6 +862,7 @@ function Quotations() {
                           outline: 0,
                           borderRadius: "8px",
                           fontWeight: 700,
+                          width: "100px",
                         }}
                       >
                         {
@@ -898,12 +873,12 @@ function Quotations() {
                           //   ele.discount,
                           //   ele.tax
                           // ),
-                          // calculateDiscountAmount(
-                          //   ele.rate,
-                          //   ele.quantity,
-                          //   ele.discount,
-                          //   ele.tax
-                          // ))
+                          calculateFinalAmount(
+                            ele.rate,
+                            ele.quantity,
+                            ele.discount,
+                            ele.markup
+                          )
                         }
                       </div>
                     </td>
@@ -1157,7 +1132,7 @@ function Quotations() {
                           borderRadius: "8px",
                         }}
                         value={ele.rate}
-                        onChange={(e) => handleRateChange(e, index)}
+                        // onChange={(e) => handleRateChange(e, index)}
                       />
                     </td>
                     <td className="td_S m-auto th_C p-4">
@@ -1185,7 +1160,7 @@ function Quotations() {
                           borderRadius: "8px",
                         }}
                         value={ele.tax}
-                        onChange={(e) => handleGstChange(e, index)}
+                        // onChange={(e) => handleGstChange(e, index)}
                       />
                     </td>
                     <td className="td_S m-auto th_C p-4">
@@ -1207,7 +1182,7 @@ function Quotations() {
                             ele.discount,
                             ele.tax
                           ),
-                          calculateDiscountAmount(
+                          calculateFinalAmount(
                             ele.rate,
                             ele.quantity,
                             ele.discount,

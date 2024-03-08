@@ -206,7 +206,7 @@ function Saleinvoices() {
         <div className="col-md-8"></div>
       </div>
       <div className="row m-auto">
-        <DataTable columns={columns.reverse()} data={filterdata} pagination />
+        <DataTable columns={columns} data={filterdata.reverse()} pagination />
       </div>
     </>
   );

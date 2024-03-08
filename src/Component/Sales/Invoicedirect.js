@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/esm/Button";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import { Modal, Table } from "react-bootstrap";
-import { CSVLink } from "react-csv";
-import * as XLSX from "xlsx";
 import { Autocomplete, TextField } from "@mui/material";
 
 function Invoicedirect() {
@@ -17,9 +14,10 @@ function Invoicedirect() {
   const [customername, setcustomername] = useState("");
   const [Invoicenumber, setInvoicenumber] = useState(1);
   const [Invoicedate, setInvoicedate] = useState("");
-  const [PaymentTerms, setPaymentTerms] = useState("");
+  const [allInvoice, setAllInvoice] = useState([]);
   const [Address, setAddress] = useState("");
   const [PhoneNumber, setPhoneNumber] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState(1);
   const [DeliveryMethod, setDeliveryMethod] = useState("");
   const [SalesPerson, setSalesPerson] = useState("");
   const [invoicetype, setinvoicetype] = useState("");
@@ -93,6 +91,13 @@ function Invoicedirect() {
   }, []);
 
   // console.log("=======", allItems);
+  const [allsalesorder, setallsalesorder] = useState([]);
+  useEffect(() => {
+    const invoiceLength = allInvoice.filter(
+      (item) => item.salestype === "Invoice"
+    ).length;
+    setInvoiceNumber(invoiceLength + 1);
+  }, [allInvoice]);
 
   const getAllAccounts = async () => {
     try {
@@ -102,6 +107,41 @@ function Invoicedirect() {
       if (response.status === 200) {
         // console.log("Customer=====>", response.data);
         setAllAccounts(response.data.allAccount);
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  };
+
+  useEffect(() => {
+    getAllInvoice();
+  }, []);
+
+  const getAllInvoice = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:9001/api/transaction/salesorder/getallinvoice"
+      );
+      if (response.status === 200) {
+        console.log("Account Group=====>", response.data);
+        setAllInvoice(response.data.invoiceall);
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  };
+
+  useEffect(() => {
+    getallsalesorder();
+  }, []);
+
+  const getallsalesorder = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:9001/api/transaction/salesorder/getallsalesorder"
+      );
+      if (response.status === 200) {
+        setallsalesorder(response.data.salesorder);
       }
     } catch (error) {
       console.warn(error);
@@ -235,6 +275,36 @@ function Invoicedirect() {
     setPhoneNumber(findAccount.mobileNo);
   };
 
+  // const handleSelectChange = (event, newValue, index) => {
+  //   // Use newValue to get the selected item
+  //   const selectedItem = newValue;
+
+  //   console.log(
+  //     "selectedItem in the handleSelectChange function",
+  //     selectedItem
+  //   );
+
+  //   setitemDetails((prevTableSet) => {
+  //     const newTableSet = [...prevTableSet];
+  //     const updatedStockInHand = selectedItem?.stockInHand || 0;
+  //     newTableSet[index] = {
+  //       ...newTableSet[index],
+  //       itemId: selectedItem?._id || "",
+  //       itemName: selectedItem?.itemName || "",
+  //       quantity: Number(0),
+  //       rate:
+  //         selectedItem?.sellingPrice !== undefined &&
+  //         selectedItem?.sellingPrice !== null
+  //           ? Number(selectedItem.sellingPrice)
+  //           : 0.0,
+  //       discount: Number(0),
+  //       oldstockinhand: updatedStockInHand,
+  //     };
+
+  //     return newTableSet;
+  //   });
+  // };
+
   const handleSelectChange = (event, newValue, index) => {
     // Use newValue to get the selected item
     const selectedItem = newValue;
@@ -307,40 +377,68 @@ function Invoicedirect() {
   //   });
   // };
 
+  // const handleQuantityChange = (e, index) => {
+  //   const newQuantity = Number(e.target.value);
+  //   console.log("newQuantity", newQuantity);
+  //   const selectedItem = itemDetails[index];
+  //   console.log("selectedItem", selectedItem);
+  //   console.log("newQuantity", newQuantity);
+  //   if (
+  //     parseInt(newQuantity, 10) > parseInt(itemDetails[index].oldstockinhand)
+  //   ) {
+  //     alert("Quantity can't be more than stock available");
+  //     console.log("Quantity can't be more than stock available");
+  //     return;
+  //   } else {
+  //     setitemDetails((prevTableSet) => {
+  //       const newTableSet = [...prevTableSet];
+  //       const findOldStockInHand = parseInt(itemDetails[index].oldstockinhand);
+  //       const remainingStock = findOldStockInHand - newQuantity;
+  //       newTableSet[index] = {
+  //         ...newTableSet[index],
+  //         quantity: newQuantity,
+  //         stockInHand: findOldStockInHand - parseInt(newQuantity),
+  //         discountAmount: calculateFinalAmount(
+  //           newTableSet[index].rate,
+  //           newQuantity,
+  //           newTableSet[index].discount,
+  //           remainingStock
+  //         ),
+  //       };
+  //       console.log("Updated Table Set:", newTableSet);
+  //       return newTableSet;
+  //     });
+  //   }
+  // };
   const handleQuantityChange = (e, index) => {
-    const newQuantity = Number(e.target.value);
-    console.log("newQuantity", newQuantity);
-    const selectedItem = itemDetails[index];
-    console.log("selectedItem", selectedItem);
-    console.log("newQuantity", newQuantity);
-    if (
-      parseInt(newQuantity, 10) > parseInt(itemDetails[index].oldstockinhand)
-    ) {
-      alert("Quantity can't be more than stock available");
-      console.log("Quantity can't be more than stock available");
+    const newQuantity = e.target.value;
+    if (parseInt(newQuantity) > parseInt(itemDetails[index].oldstockinhand)) {
+      alert(
+        `Quantity cannot be more than ${parseInt(
+          itemDetails[index].oldstockinhand
+        )}!`
+      );
       return;
-    } else {
-      setitemDetails((prevTableSet) => {
-        const newTableSet = [...prevTableSet];
-        const findOldStockInHand = parseInt(itemDetails[index].oldstockinhand);
-        const remainingStock = findOldStockInHand - newQuantity;
-        newTableSet[index] = {
-          ...newTableSet[index],
-          quantity: newQuantity,
-          stockInHand: findOldStockInHand - parseInt(newQuantity),
-          discountAmount: calculateFinalAmount(
-            newTableSet[index].rate,
-            newQuantity,
-            newTableSet[index].discount,
-            remainingStock
-          ),
-        };
-        console.log("Updated Table Set:", newTableSet);
-        return newTableSet;
-      });
     }
-  };
+    setitemDetails((prevTableSet) => {
+      const newTableSet = [...prevTableSet];
+      const findOldStockInHand = parseInt(itemDetails[index].oldstockinhand);
+      const remainingStock = findOldStockInHand - parseInt(newQuantity);
 
+      newTableSet[index] = {
+        ...newTableSet[index],
+        quantity: newQuantity,
+        stockInHand: remainingStock,
+        discountAmount: calculateFinalAmount(
+          newTableSet[index].rate,
+          newQuantity,
+          newTableSet[index].discount,
+          newTableSet[index].markup
+        ),
+      };
+      return newTableSet;
+    });
+  };
   const handleRateChange = (e, index) => {
     const newRate = e.target.value;
     setitemDetails((prevTableSet) => {
@@ -360,7 +458,7 @@ function Invoicedirect() {
 
   const handleDiscountChange = (e, index) => {
     const newDiscount = Number(e.target.value);
-    console.log("newDiscount", typeof newDiscount);
+    // console.log("newDiscount", typeof newDiscount);
     setitemDetails((prevTableSet) => {
       const newTableSet = [...prevTableSet];
       newTableSet[index] = {
@@ -369,7 +467,8 @@ function Invoicedirect() {
         discountAmount: calculateFinalAmount(
           newTableSet[index].rate,
           newTableSet[index].quantity,
-          newDiscount
+          newDiscount,
+          newTableSet[index].markup
           // newTableSet[index].tax // Pass tax value as well
         ),
       };
@@ -412,23 +511,23 @@ function Invoicedirect() {
   //   });
   // };
 
-  const handleGstChange = (e, index) => {
-    const newGst = e.target.value;
-    setitemDetails((prevTableSet) => {
-      const newTableSet = [...prevTableSet];
-      newTableSet[index] = {
-        ...newTableSet[index],
-        gst: newGst,
-        discountAmount: calculateFinalAmount(
-          newTableSet[index].rate,
-          newTableSet[index].quantity,
-          newTableSet[index].discount,
-          newGst
-        ),
-      };
-      return newTableSet;
-    });
-  };
+  // const handleGstChange = (e, index) => {
+  //   const newGst = e.target.value;
+  //   setitemDetails((prevTableSet) => {
+  //     const newTableSet = [...prevTableSet];
+  //     newTableSet[index] = {
+  //       ...newTableSet[index],
+  //       gst: newGst,
+  //       discountAmount: calculateFinalAmount(
+  //         newTableSet[index].rate,
+  //         newTableSet[index].quantity,
+  //         newTableSet[index].discount,
+  //         newGst
+  //       ),
+  //     };
+  //     return newTableSet;
+  //   });
+  // };
 
   // const calculateFinalAmount = (rate, quantity, discount, tax) => {
   //   const stringToQuantity = parseFloat(quantity);
@@ -565,13 +664,6 @@ function Invoicedirect() {
     });
   };
 
-  useEffect(() => {
-    const salesLength = allSalesItems.filter(
-      (item) => item.salestype === "Sales"
-    ).length;
-    setInvoicenumber(salesLength + 1);
-  }, [allSalesItems]);
-
   // console.log("selectedRows", selectedRows);
   // console.log("checkedRow outside fuct", checkedRow);
   return (
@@ -604,7 +696,7 @@ function Invoicedirect() {
             <div className="col-md-8 mb-4">
               <Form.Control
                 placeholder="Sales Invoice Number"
-                value={Invoicenumber}
+                value={invoiceNumber}
                 readOnly
                 onChange={(e) => setInvoicenumber(e.target.value)}
               />

@@ -1201,7 +1201,7 @@ function DirectSales() {
 
     const finalAmount = discountedAmount * (1 + Number(markup) / 100);
 
-    return Number(finalAmount.toFixed(2));
+    return Number(Math.round(finalAmount.toFixed(2)));
   };
 
   const handleDeleteRow = (index) => {
@@ -1468,6 +1468,7 @@ function DirectSales() {
                     placeholder="Rate"
                     type="number"
                     min={0}
+                    readOnly
                     style={{
                       border: "1px solid #dee2e6",
                       padding: "11px",
@@ -1475,7 +1476,7 @@ function DirectSales() {
                       borderRadius: "8px",
                     }}
                     value={ele.rate}
-                    onChange={(e) => handleRateChange(e, index)}
+                    // onChange={(e) => handleRateChange(e, index)}
                   />
                 </td>
                 <td className="td_S m-auto th_C">
